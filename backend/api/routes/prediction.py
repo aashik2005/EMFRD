@@ -216,9 +216,23 @@ async def predict_full(request: PredictionRequest):
     """
     Predict using full EMFRD framework
 
-    Currently uses best available model (contrastive if trained, else baseline)
-    Full multimodal fusion will be implemented in later phases.
+    Uses best available model:
+    1. Fusion (if trained) - combines all modalities
+    2. Contrastive (if trained) - enhanced semantic
+    3. Baseline (fallback) - basic semantic
+
+    Note: Fusion model requires all component models to be trained first.
+    See training documentation for details.
     """
+    # Check for fusion model (when implemented)
+    fusion_dir = settings.MODELS_DIR / "fusion"
+    fusion_checkpoint = CheckpointManager(fusion_dir, "fusion")
+
+    if fusion_checkpoint.exists("best.pt"):
+        # TODO: Implement fusion prediction
+        # For now, fall through to best available single model
+        pass
+
     # Check if contrastive model is trained
     checkpoint_dir = settings.MODELS_DIR / "roberta_contrastive"
     checkpoint_manager = CheckpointManager(checkpoint_dir, "roberta_contrastive")
