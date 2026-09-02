@@ -5,7 +5,7 @@ Main entry point for the backend API
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
-from backend.api.routes import prediction, experiments, datasets, metrics
+from backend.api.routes import prediction, experiments, datasets, metrics, explainability
 
 # Create FastAPI app
 app = FastAPI(
@@ -30,6 +30,7 @@ app.include_router(prediction.router, prefix="/api/predict", tags=["Prediction"]
 app.include_router(experiments.router, prefix="/api/experiments", tags=["Experiments"])
 app.include_router(datasets.router, prefix="/api/datasets", tags=["Datasets"])
 app.include_router(metrics.router, prefix="/api/metrics", tags=["Metrics"])
+app.include_router(explainability.router, prefix="/api/explain", tags=["Explainability"])
 
 
 @app.get("/")
