@@ -38,6 +38,8 @@ function PredictionPage() {
 
       if (selectedModel === 'full_emfrd') {
         prediction = await api.predictFull({ review_text: reviewText });
+      } else if (selectedModel === 'roberta_contrastive') {
+        prediction = await api.predictContrastive({ review_text: reviewText });
       } else {
         prediction = await api.predictRoberta({ review_text: reviewText });
       }
@@ -85,6 +87,7 @@ function PredictionPage() {
               style={{ width: '100%', marginBottom: 16 }}
               options={[
                 { value: 'roberta_baseline', label: 'RoBERTa Baseline' },
+                { value: 'roberta_contrastive', label: 'RoBERTa + Contrastive Learning (Phase 2)' },
                 { value: 'full_emfrd', label: 'Full EMFRD (when available)' },
               ]}
             />

@@ -71,6 +71,11 @@ export const api = {
     return response.data;
   },
 
+  async predictContrastive(request: PredictionRequest): Promise<PredictionResponse> {
+    const response = await apiClient.post('/api/predict/contrastive', request);
+    return response.data;
+  },
+
   async predictFull(request: PredictionRequest): Promise<PredictionResponse> {
     const response = await apiClient.post('/api/predict/full', request);
     return response.data;

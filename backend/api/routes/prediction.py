@@ -3,8 +3,9 @@ Prediction endpoints
 """
 from fastapi import APIRouter, HTTPException, Depends
 from backend.schemas import PredictionRequest, PredictionResponse, ModelType
-from backend.models import RoBERTaBaseline
+from backend.models import RoBERTaBaseline, RoBERTaContrastive
 from backend.models.roberta_baseline import RoBERTaTokenizer
+from backend.models.roberta_contrastive import RoBERTaContrastiveTokenizer
 from backend.preprocessing import TextPreprocessor
 from backend.utils import get_device, CheckpointManager
 from backend.config import settings
@@ -116,16 +117,118 @@ async def predict_roberta(request: PredictionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def get_contrastive_model():
+    """Load RoBERTa + Contrastive model (cached)"""
+    model_key = "roberta_contrastive"
+
+    if model_key not in _model_cache:
+        print("Loading RoBERTa + Contrastive model...")
+
+        # Get device
+        device = get_device(settings.DEVICE)
+
+        # Initialize model
+        model = RoBERTaContrastive(
+            model_name=settings.ROBERTA_MODEL,
+            num_labels=2,
+            dropout=settings.DROPOUT,
+            projection_dim=settings.PROJECTION_DIM,
+            temperature=settings.CONTRASTIVE_TEMPERATURE,
+            contrastive_weight=settings.CONTRASTIVE_WEIGHT,
+        )
+
+        # Load checkpoint if exists
+        checkpoint_dir = settings.MODELS_DIR / "roberta_contrastive"
+        checkpoint_manager = CheckpointManager(checkpoint_dir, "roberta_contrastive")
+
+        if checkpoint_manager.exists("best.pt"):
+            checkpoint_manager.load(model, checkpoint_name="best.pt", device=device)
+            print("Loaded trained contrastive model")
+        else:
+            print("WARNING: No trained contrastive model found. Using untrained model.")
+            print(f"Train the model first: python -m backend.training.train_contrastive")
+
+        model = model.to(device)
+        model.eval()
+
+        _model_cache[model_key] = {"model": model, "device": device}
+
+    return _model_cache[model_key]
+
+
+@router.post("/contrastive", response_model=PredictionResponse)
+async def predict_contrastive(request: PredictionRequest):
+    """
+    Predict using RoBERTa + Contrastive Learning model
+
+    This endpoint uses RoBERTa enhanced with supervised contrastive learning
+    for improved semantic representations.
+    """
+    try:
+        # Preprocess
+        preprocessor = TextPreprocessor()
+        cleaned_text = preprocessor.preprocess(request.review_text)
+
+        if not preprocessor.is_valid_review(cleaned_text):
+            raise HTTPException(status_code=400, detail="Invalid review text")
+
+        # Get model and tokenizer
+        model_data = get_contrastive_model()
+        model = model_data["model"]
+        device = model_data["device"]
+        tokenizer = get_tokenizer()
+
+        # Tokenize
+        encoded = tokenizer.encode_batch([cleaned_text])
+        input_ids = encoded["input_ids"].to(device)
+        attention_mask = encoded["attention_mask"].to(device)
+
+        # Predict
+        with torch.no_grad():
+            outputs = model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                return_contrastive=False,  # Don't need contrastive embeddings for prediction
+            )
+            logits = outputs["logits"]
+            probas = torch.softmax(logits, dim=-1)
+
+        # Get results
+        fake_prob = float(probas[0, 1].cpu())
+        genuine_prob = float(probas[0, 0].cpu())
+        prediction = "FAKE" if fake_prob > 0.5 else "GENUINE"
+        confidence = max(fake_prob, genuine_prob)
+
+        return PredictionResponse(
+            prediction=prediction,
+            confidence=confidence,
+            fake_probability=fake_prob,
+            genuine_probability=genuine_prob,
+            model_used="roberta_contrastive",
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/full", response_model=PredictionResponse)
 async def predict_full(request: PredictionRequest):
     """
     Predict using full EMFRD framework
 
-    Currently falls back to RoBERTa baseline (other components in later phases)
+    Currently uses best available model (contrastive if trained, else baseline)
+    Full multimodal fusion will be implemented in later phases.
     """
-    # TODO: Implement full multimodal fusion in later phases
-    # For now, use RoBERTa baseline
-    return await predict_roberta(request)
+    # Check if contrastive model is trained
+    checkpoint_dir = settings.MODELS_DIR / "roberta_contrastive"
+    checkpoint_manager = CheckpointManager(checkpoint_dir, "roberta_contrastive")
+
+    if checkpoint_manager.exists("best.pt"):
+        # Use contrastive model if available (better performance)
+        return await predict_contrastive(request)
+    else:
+        # Fall back to baseline
+        return await predict_roberta(request)
 
 
 @router.get("/models")
