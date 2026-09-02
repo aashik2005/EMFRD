@@ -7,6 +7,13 @@ from pathlib import Path
 from .dataset_base import BaseDataset
 from .fake_reviews_dataset import FakeReviewsDataset
 
+# FraudAmazon requires DGL - import conditionally
+try:
+    from .fraud_amazon_dataset import FraudAmazonDataset
+    FRAUD_AMAZON_AVAILABLE = True
+except ImportError:
+    FRAUD_AMAZON_AVAILABLE = False
+
 
 class DatasetRegistry:
     """Registry for all available datasets"""
@@ -15,9 +22,12 @@ class DatasetRegistry:
         "fake_reviews": FakeReviewsDataset,
         # Future datasets will be added here:
         # "amazon_reviews_2023": AmazonReviews2023Dataset,
-        # "fraud_amazon": FraudAmazonDataset,
         # "modern_fake_reviews": ModernFakeReviewsDataset,
     }
+
+    # Add FraudAmazon if DGL is available
+    if FRAUD_AMAZON_AVAILABLE:
+        _datasets["fraud_amazon"] = FraudAmazonDataset
 
     @classmethod
     def register(cls, name: str, dataset_class: Type[BaseDataset]) -> None:
