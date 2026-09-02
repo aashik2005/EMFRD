@@ -1,0 +1,86 @@
+{
+  "note": "These are reference values REPORTED IN THE PAPER, not our experimental results",
+  "warning": "DO NOT use these as actual results. The UI must display both paper reference and our reproduction.",
+
+  "roberta_baseline": {
+    "accuracy": 0.934,
+    "precision": 0.928,
+    "recall": 0.921,
+    "f1": 0.924,
+    "note": "RoBERTa without contrastive learning"
+  },
+
+  "roberta_contrastive": {
+    "accuracy": 0.968,
+    "precision": 0.961,
+    "recall": 0.957,
+    "f1": 0.959,
+    "note": "RoBERTa + Supervised Contrastive Learning"
+  },
+
+  "hgnn": {
+    "accuracy": 0.952,
+    "precision": 0.949,
+    "recall": 0.953,
+    "f1": 0.951,
+    "note": "Heterogeneous Graph Neural Network only"
+  },
+
+  "gan_adversarial": {
+    "accuracy": 0.928,
+    "precision": 0.921,
+    "recall": 0.917,
+    "f1": 0.919,
+    "note": "GAN-based adversarial training detector"
+  },
+
+  "fusion_full": {
+    "accuracy": 0.978,
+    "precision": 0.974,
+    "recall": 0.969,
+    "f1": 0.971,
+    "note": "Full EMFRD with gated multimodal fusion"
+  },
+
+  "ablation": {
+    "full_emfrd": {
+      "accuracy": 0.978,
+      "note": "Full framework"
+    },
+    "without_contrastive": {
+      "accuracy": 0.961,
+      "drop": 0.017,
+      "note": "Removed contrastive learning"
+    },
+    "without_hgnn": {
+      "accuracy": 0.951,
+      "drop": 0.027,
+      "note": "Removed graph component"
+    },
+    "without_gan": {
+      "accuracy": 0.969,
+      "drop": 0.009,
+      "note": "Removed adversarial training"
+    },
+    "without_fusion": {
+      "accuracy": 0.943,
+      "drop": 0.035,
+      "note": "Simple concatenation instead of gated fusion"
+    }
+  },
+
+  "traditional_ml": {
+    "tfidf_lr": {
+      "accuracy": 0.847,
+      "note": "TF-IDF + Logistic Regression"
+    },
+    "tfidf_svm": {
+      "accuracy": 0.861,
+      "note": "TF-IDF + SVM"
+    },
+    "naive_bayes": {
+      "accuracy": 0.823,
+      "note": "Naive Bayes"
+    }
+  }
+}

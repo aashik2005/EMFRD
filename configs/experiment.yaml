@@ -1,0 +1,92 @@
+# EMFRD Experiment Configuration
+
+dataset:
+  name: fake_reviews
+  primary_path: ./data/raw/fake_reviews
+  cache_path: ./data/cache
+
+  # Splitting
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+  # Filtering
+  min_review_length: 10
+  max_review_length: 5000
+
+training:
+  # Reproducibility
+  random_seed: 42
+  deterministic: true
+
+  # Training params
+  batch_size: 8
+  max_epochs: 3
+  learning_rate: 0.00002  # 2e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  warmup_steps: 100
+
+  # Mixed precision
+  mixed_precision: true
+
+  # Device
+  device: auto  # auto, cuda, cpu
+
+roberta:
+  model_name: roberta-base
+  max_seq_length: 256
+  dropout: 0.1
+  freeze_encoder: false
+
+contrastive:
+  temperature: 0.07
+  contrastive_weight: 0.2
+  projection_dim: 128
+  use_hard_negatives: true
+
+hgnn:
+  hidden_dim: 128
+  num_layers: 2
+  dropout: 0.2
+  aggregation: mean
+  edge_types:
+    - user_writes_review
+    - review_about_product
+    - user_reviews_product
+
+gan:
+  enabled: true
+  latent_dim: 100
+  generator_hidden: 256
+  discriminator_hidden: 256
+  gan_weight: 0.1
+
+fusion:
+  hidden_dim: 256
+  dropout: 0.2
+  gate_activation: sigmoid
+  modalities:
+    - semantic
+    - graph
+    - adversarial
+  handle_missing: true
+
+evaluation:
+  # Which metrics to compute
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - roc_auc
+    - specificity
+
+  # Comparison with paper
+  compare_with_paper: true
+
+output:
+  models_dir: ./models
+  experiments_dir: ./experiments
+  checkpoint_every: 1  # epochs
+  save_best_only: false
